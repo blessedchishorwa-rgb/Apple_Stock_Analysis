@@ -1,0 +1,202 @@
+﻿-- =============================================================
+-- APPLE STOCK PERFORMANCE AND RISK ANALYSIS
+-- Analysis period: 21 October 2024 to 16 October 2026
+-- Database: PostgreSQL
+-- =============================================================
+
+
+-- =============================================================
+-- 1. CREATE TABLE
+-- =============================================================
+
+DROP TABLE IF EXISTS apple_prices;
+
+CREATE TABLE apple_prices (
+    date DATE PRIMARY KEY,
+    open NUMERIC(12, 4),
+    high NUMERIC(12, 4),
+    low NUMERIC(12, 4),
+    close NUMERIC(12, 4),
+    volume BIGINT
+);
+
+
+-- =============================================================
+-- 2. IMPORT DATA
+-- =============================================================
+
+-- Option A: PostgreSQL COPY command
+-- Update the file path to match the location of your CSV file.
+
+COPY apple_prices (
+    date,
+    open,
+    high,
+    low,
+    close,
+    volume
+)
+FROM 'C:/data/apple_analysis_clean.csv'
+WITH (
+    FORMAT csv,
+    HEADER true
+);
+
+
+-- =============================================================
+-- 3. CHECK IMPORTED DATA
+-- =============================================================
+
+-- Check the first 10 rows
+SELECT *
+FROM apple_prices
+ORDER BY date
+LIMIT 10;
+
+-- Check the number of records
+SELECT COUNT(*) AS total_records
+FROM apple_prices;
+
+-- Check the date range
+SELECT
+    MIN(date) AS first_date,
+    MAX(date) AS last_date
+FROM apple_prices;
+
+-- Check for missing closing prices
+SELECT COUNT(*) AS missing_close_prices
+FROM apple_prices
+WHERE close IS NULL;
+
+
+-- =============================================================
+-- 4. CREATE ANALYSIS VIEW WITH DAILY RETURNS
+--    AND 30-DAY MOVING AVERAGE
+-- =============================================================
+
+CREATE OR REPLACE VIEW apple_stock_analysis AS
+SELECT
+    date,
+    open,
+    high,
+    low,
+    close,
+    volume,
+    ROUND(
+        (close / LAG(close) OVER (ORDER BY date) - 1) * 100,
+        4
+    ) AS daily_return_percent,
+    ROUND(
+        AVG(close) OVER (
+            ORDER BY date
+            ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+        ),
+        4
+    ) AS moving_average_30
+FROM apple_prices
+ORDER BY date;
+
+
+-- Check the analysis view
+SELECT *
+FROM apple_stock_analysis
+ORDER BY date;
+
+
+-- =============================================================
+-- 5. FILTER THE TWO-YEAR ANALYSIS PERIOD
+-- =============================================================
+
+SELECT *
+FROM apple_stock_analysis
+WHERE date BETWEEN '2024-10-21' AND '2026-10-16'
+ORDER BY date;
+
+
+-- =============================================================
+-- 6. KEY PERFORMANCE SUMMARY
+-- =============================================================
+
+WITH returns AS (
+    SELECT
+        date,
+        close,
+        (close / LAG(close) OVER (ORDER BY date) - 1) AS daily_return
+    FROM apple_prices
+    WHERE date BETWEEN '2024-10-21' AND '2026-10-16'
+)
+
+SELECT
+    MIN(date) AS analysis_start_date,
+    MAX(date) AS analysis_end_date,
+    ROUND(
+        (SELECT close
+         FROM apple_prices
+         WHERE date = (SELECT MIN(date) FROM returns)),
+        4
+    ) AS first_closing_price,
+    ROUND(
+        (SELECT close
+         FROM apple_prices
+         WHERE date = (SELECT MAX(date) FROM returns)),
+        4
+    ) AS last_closing_price,
+    ROUND(
+        AVG(daily_return) * 100,
+        4
+    ) AS average_daily_return_percent,
+    ROUND(
+        STDDEV(daily_return) * 100,
+        4
+    ) AS daily_volatility_percent,
+    ROUND(
+        STDDEV(daily_return) * SQRT(252) * 100,
+        4
+    ) AS annualized_volatility_percent,
+    ROUND(
+        MAX(daily_return) * 100,
+        4
+    ) AS best_daily_return_percent,
+    ROUND(
+        MIN(daily_return) * 100,
+        4
+    ) AS worst_daily_return_percent
+FROM returns;
+
+
+-- =============================================================
+-- 7. CUMULATIVE RETURN
+-- =============================================================
+
+WITH date_range AS (
+    SELECT
+        MIN(date) AS first_date,
+        MAX(date) AS last_date
+    FROM apple_prices
+    WHERE date BETWEEN '2024-10-21' AND '2026-10-16'
+),
+
+prices AS (
+    SELECT
+        a.date,
+        a.close
+    FROM apple_prices a
+    JOIN date_range d
+        ON a.date = d.first_date
+        OR a.date = d.last_date
+)
+
+SELECT
+    ROUND(
+        (
+            MAX(CASE WHEN date = (SELECT last_date FROM date_range) THEN close END)
+            /
+            MAX(CASE WHEN date = (SELECT first_date FROM date_range) THEN close END)
+            - 1
+        ) * 100,
+        4
+    ) AS cumulative_return_percent
+FROM prices;
+
+
+-- ===========================================================
