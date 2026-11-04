@@ -12,10 +12,9 @@ Analysis of Apple’s stock price performance, daily returns, volatility, and tr
 - [SQL analysis script](sql/apple_analysis.sql): Data validation, daily returns, moving averages, and KPI queries.
 - [Python analysis notebook](notebooks/apple_analysis.ipynb): Data cleaning, return and volatility calculations, and chart creation.
 - [Power BI dashboard](dashboard/Apple_Stock_Dashboard.pbix): Interactive performance and risk dashboard.
-- [Dashboard screenshots](dashboard/dashboard_screenshots/): Power BI dashboard previews.
 - [Analysis charts](images/): Excel and Python visualisations.
-- [Final report](reports/Apple_Stock_Analysis_Report.pdf): Complete project report.
+
 
 ## Full Case Study
 
-[View the full case study](https://www.notion.so/Your-Notion-Page-Link)
+[View the full case study](https://www.notion.so/Apple-Stock-Performance-and-Risk-Analysis-Excel-SQL-Python-Power-BI-3efd7f269d0f802dbe03fd8540b8c3c9)
