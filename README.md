@@ -2,6 +2,12 @@
 
 Analysis of Apple’s stock performance, daily returns, volatility, and price trends using Excel, SQL, Python, and Power BI.
 
+## Data Source
+
+[View Apple (AAPL.US) historical stock data on Stooq](https://stooq.com/q/d/?s=aapl.us)
+
+Daily historical data includes date, open, high, low, close, and trading volume.
+
 ## Repository Contents
 
 - [SQL analysis script](Apple_Analysis.txt): SQL queries for the stock analysis, saved as a text file.
